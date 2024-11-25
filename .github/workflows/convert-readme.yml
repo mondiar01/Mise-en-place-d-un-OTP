@@ -8,50 +8,29 @@ on:
       - 'docs/images/**'
 
 jobs:
-  convert-readme:
+  convert_to_pdf:
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install required packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            pandoc \
-            texlive-xetex \
-            texlive-fonts-recommended \
-            texlive-lang-french \
-            texlive-latex-extra
 
-      - name: Create output directories
+      - name: Prepare directory
         run: |
-          mkdir -p output/pdf
-          mkdir -p temp/images
-
-      - name: Prepare README and images
-        run: |
-          cp README.md temp/
-          cp -r docs/images temp/
-          cd temp
-          sed -i 's|docs/images/|images/|g' README.md
+          mkdir -p output
 
       - name: Convert README to PDF
-        working-directory: temp
-        run: |
-          pandoc README.md \
-            -f markdown \
-            -t pdf \
-            --pdf-engine=xelatex \
-            -V geometry:margin=1in \
-            -V lang=fr \
-            -V documentclass=article \
-            --toc \
-            -o "../output/pdf/README.pdf"
+        uses: pandoc/pandoc-action@v1
+        with:
+          args: >-
+            README.md
+            --output=output/README.pdf
+            --from=markdown
+            --to=pdf
+            --pdf-engine=xelatex
+            --variable=geometry:margin=1in
+            --toc
 
       - name: Upload PDF
         uses: actions/upload-artifact@v4
         with:
-          name: readme-pdf
-          path: output/pdf/README.pdf
-          retention-days: 30
+          name: README
+          path: output/README.pdf
