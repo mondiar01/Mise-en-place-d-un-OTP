@@ -1,4 +1,4 @@
-name: Convert README to Word
+name: Convert README to PDF
 on:
   push:
     branches:
@@ -14,49 +14,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Pandoc and required packages
+      - name: Install required packages
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             pandoc \
-            librsvg2-bin
+            texlive-xetex \
+            texlive-fonts-recommended \
+            texlive-lang-french \
+            texlive-latex-extra
 
       - name: Create output directories
         run: |
-          mkdir -p output/word
+          mkdir -p output/pdf
           mkdir -p temp/images
 
       - name: Prepare README and images
         run: |
-          # Copier le README
           cp README.md temp/
-          
-          # Copier les images
-          cp -r docs/images/* temp/images/
-          
-          # Ajuster les chemins des images dans le README
+          cp -r docs/images temp/
           cd temp
           sed -i 's|docs/images/|images/|g' README.md
 
-      - name: Create reference.docx
-        run: |
-          pandoc -o reference.docx --print-default-data-file reference.docx
-
-      - name: Convert README to DOCX with images
+      - name: Convert README to PDF
         working-directory: temp
         run: |
           pandoc README.md \
             -f markdown \
-            -t docx \
+            -t pdf \
+            --pdf-engine=xelatex \
+            -V geometry:margin=1in \
+            -V lang=fr \
+            -V documentclass=article \
             --toc \
-            --wrap=none \
-            --reference-doc=../reference.docx \
-            --extract-media=. \
-            -o "../output/word/README.docx"
+            -o "../output/pdf/README.pdf"
 
-      - name: Upload Word document
+      - name: Upload PDF
         uses: actions/upload-artifact@v4
         with:
-          name: readme-word
-          path: output/word/README.docx
+          name: readme-pdf
+          path: output/pdf/README.pdf
           retention-days: 30
