@@ -14,36 +14,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Pandoc
+      - name: Install Pandoc and required packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc
+          sudo apt-get install -y \
+            pandoc \
+            librsvg2-bin
 
       - name: Create output directories
         run: |
           mkdir -p output/word
-          mkdir -p temp
+          mkdir -p temp/images
 
       - name: Prepare README and images
         run: |
+          # Copier le README
           cp README.md temp/
-          cp -r docs/images temp/
+          
+          # Copier les images
+          cp -r docs/images/* temp/images/
+          
+          # Ajuster les chemins des images dans le README
           cd temp
           sed -i 's|docs/images/|images/|g' README.md
 
-      - name: Convert README to DOCX
+      - name: Create reference.docx
+        run: |
+          pandoc -o reference.docx --print-default-data-file reference.docx
+
+      - name: Convert README to DOCX with images
         working-directory: temp
         run: |
           pandoc README.md \
             -f markdown \
             -t docx \
             --toc \
+            --wrap=none \
+            --reference-doc=../reference.docx \
+            --extract-media=. \
             -o "../output/word/README.docx"
-
-      - name: List generated files
-        run: |
-          echo "Generated DOCX files:"
-          ls -l output/word/
 
       - name: Upload Word document
         uses: actions/upload-artifact@v4

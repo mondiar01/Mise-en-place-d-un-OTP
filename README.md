@@ -10,6 +10,7 @@ Ce projet implémente un système d'authentification à deux facteurs en Python.
 project/
 ├── main.py
 ├── README.md
+├── reference.docx
 ├── .github/
 │   └── workflows/
 │       └── convert-readme.yml
@@ -68,7 +69,7 @@ python main.py
   - Adresse
   - Code postal
 
-<img src="docs/images/inscription.png" width="500" alt="Interface d'inscription">
+<img src="docs/images/inscription.png" width="500" alt="Interface d'inscription" style="border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin: 10px;">
 
 ### 2. Critères de Sécurité du Mot de Passe
 Le mot de passe doit contenir :
@@ -77,7 +78,7 @@ Le mot de passe doit contenir :
 - Au moins un chiffre
 - Au moins un caractère spécial (!@#$%^&*)
 
-<img src="docs/images/mot_de_passe_invalide.png" width="500" alt="Message d'erreur mot de passe invalide">
+<img src="docs/images/mot_de_passe_invalide.png" width="500" alt="Message d'erreur mot de passe invalide" style="border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin: 10px;">
 
 ### 3. Connexion - Première Étape
 - Authentification classique avec :
@@ -85,7 +86,7 @@ Le mot de passe doit contenir :
   - Mot de passe
 - Limite de 3 tentatives de connexion
 
-<img src="docs/images/connexion.png" width="500" alt="Interface de connexion">
+<img src="docs/images/connexion.png" width="500" alt="Interface de connexion" style="border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin: 10px;">
 
 ### 4. Connexion - Deuxième Étape
 - Question de sécurité aléatoire basée sur :
@@ -93,7 +94,7 @@ Le mot de passe doit contenir :
   - Date de naissance
   - Email
 
-<img src="docs/images/question_securite.png" width="500" alt="Question de sécurité">
+<img src="docs/images/question_securite.png" width="500" alt="Question de sécurité" style="border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin: 10px;">
 
 ## Mesures de Sécurité Implémentées
 1. Hachage des mots de passe avec SHA-256
@@ -109,21 +110,21 @@ Le mot de passe doit contenir :
 2. Remplissage du formulaire d'inscription
 3. Validation des critères du mot de passe
 
-<img src="docs/images/inscription_reussie.png" width="500" alt="Inscription réussie">
+<img src="docs/images/inscription_reussie.png" width="500" alt="Inscription réussie" style="border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin: 10px;">
 
 ### Test de Connexion
 1. Tentative avec identifiants corrects
 2. Tentative avec mauvais mot de passe
 3. Vérification du blocage après 3 tentatives
 
-<img src="docs/images/blocage_compte.png" width="500" alt="Blocage du compte">
+<img src="docs/images/blocage_compte.png" width="500" alt="Blocage du compte" style="border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin: 10px;">
 
 ### Test de la Question de Sécurité
 1. Connexion réussie
 2. Réponse à la question de sécurité
 3. Accès à l'application
 
-<img src="docs/images/connexion_reussie.png" width="500" alt="Connexion réussie">
+<img src="docs/images/connexion_reussie.png" width="500" alt="Connexion réussie" style="border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin: 10px;">
 
 ## Structure de la Base de Données
 Table `users` :
@@ -137,8 +138,6 @@ Table `users` :
 - login_attempts (INTEGER)
 
 ## GitHub Actions Workflow
-Le projet inclut un workflow GitHub Actions pour convertir automatiquement le README.md en document Word :
-
 ```yaml
 name: Convert README to Word
 on:
@@ -156,30 +155,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Pandoc
+      - name: Install Pandoc and required packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc
+          sudo apt-get install -y \
+            pandoc \
+            librsvg2-bin
 
       - name: Create output directories
         run: |
           mkdir -p output/word
-          mkdir -p temp
+          mkdir -p temp/images
 
       - name: Prepare README and images
         run: |
+          # Copier le README
           cp README.md temp/
-          cp -r docs/images temp/
+          
+          # Copier les images
+          cp -r docs/images/* temp/images/
+          
+          # Ajuster les chemins des images dans le README
           cd temp
           sed -i 's|docs/images/|images/|g' README.md
 
-      - name: Convert README to DOCX
+      - name: Create reference.docx
+        run: |
+          pandoc -o reference.docx --print-default-data-file reference.docx
+
+      - name: Convert README to DOCX with images
         working-directory: temp
         run: |
           pandoc README.md \
             -f markdown \
             -t docx \
             --toc \
+            --wrap=none \
+            --reference-doc=../reference.docx \
+            --extract-media=. \
             -o "../output/word/README.docx"
 
       - name: Upload Word document
